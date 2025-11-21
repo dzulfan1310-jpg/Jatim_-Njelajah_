@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Jatim Njelajah - Eksplorasi budaya Jawa Timur: peta budaya, kuliner, dialek, dan quiz interaktif" />
+  <title>Jatim Njelajah — Dashboard Prototype</title>
+  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* Complete inline fallback CSS - loaded first */
+    :root {
+      --bg: #0f1724;
+      --card: #0b1220;
+      --muted: #94a3b8;
+      --accent: #ffb703;
+      --glass: rgba(255, 255, 255, 0.03);
+    }
+    * { box-sizing: border-box; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial; }
+    /* Background image set to IMG_8890.PNG with a semi-transparent overlay for legibility */
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, rgba(6,16,33,0.52), rgba(7,20,42,0.52)), url('foto/IMG_8890.PNG') center/cover no-repeat;
+      color: #e6eef8;
+      background-attachment: fixed;
+    }
+    .app { display: flex; min-height: 100vh; }
+    /* Sidebar: slightly stronger contrast while keeping original look */
+    aside {
+      width: 260px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255,255,255,0.01));
+      padding: 20px;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 6px 18px rgba(2,6,23,0.45);
+      backdrop-filter: blur(6px);
+    }
+    header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    /* Enlarged circular logo - force square ratio and prevent flex shrinking so it never becomes oval */
+    .logo {
+      width: 80px;
+      height: 80px;
+      min-width: 80px;
+      min-height: 80px;
+      aspect-ratio: 1/1;
+      border-radius: 50%;
+      /* keep a subtle gradient background and center the img inside */
+      background: linear-gradient(90deg, rgba(255,122,0,0.08), rgba(255,209,102,0.08));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #08101a;
+      font-weight: 700;
+      overflow: hidden;
+      flex: 0 0 auto; /* prevent flex from stretching/squeezing */
+    }
+    .logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center; /* ensure image is centered inside the circle */
+      display: block;
+      margin: 0 auto; /* remove any accidental offset */
+      /* image will be clipped by the circular container */
+      border-radius: 50%;
+    }
+
+    /* Ensure header text is vertically centered next to the logo */
+    .header-info { display: flex; flex-direction: column; justify-content: center; }
+
+    /* Responsive: scale logo down on small screens while keeping 1:1 ratio */
+    @media (max-width: 600px) {
+      .logo { width: 56px; height: 56px; min-width: 56px; min-height: 56px; }
+    }
+    h1 { font-size: 18px; margin: 0; }
+    nav { margin-top: 8px; }
+    nav a { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 8px; color: rgba(219,229,240,0.95); text-decoration: none; margin-bottom: 6px; cursor: pointer; }
+    nav a i { opacity: 0.95; }
+    nav a.active, nav a:hover {
+      background: rgba(255,255,255,0.06);
+      color: #ffffff;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+    }
+    main { flex: 1; padding: 28px; }
+    .top-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+    .card { background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent); padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.03); }
+    .card .title { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .card .value { font-size: 20px; font-weight: 700; }
+    .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+    .panel { padding: 14px; border-radius: 12px; background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent); border: 1px solid rgba(255, 255, 255, 0.03); }
+    .map-placeholder { height: 300px; border-radius: 10px; background: linear-gradient(180deg, #052033, #08324a); display: flex; align-items: center; justify-content: center; color: var(--muted); }
+    .map-iframe-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.78); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+    .map-iframe-panel { width: 92%; max-width: 1100px; height: 74%; background: #071428; border-radius: 10px; overflow: hidden; box-shadow: 0 10px 40px rgba(2, 6, 23, 0.6); display: flex; flex-direction: column; }
+    .map-iframe-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: linear-gradient(90deg, rgba(255, 255, 255, 0.02), transparent); }
+    .map-iframe-header .title { font-weight: 700; color: #e6eef8; }
+    .map-iframe-header .close-btn { background: transparent; border: 1px solid rgba(255, 255, 255, 0.06); padding: 6px 8px; border-radius: 8px; color: var(--muted); cursor: pointer; }
+    .map-iframe-content { flex: 1; display: flex; gap: 0; }
+    .map-iframe-body { width: 65%; background: #000; }
+    .map-iframe-body iframe { width: 100%; height: 100%; border: 0; }
+    .map-iframe-info { width: 35%; padding: 12px; overflow: auto; background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent); }
+    .map-iframe-info h3 { margin: 0 0 8px 0; color: #e6eef8; }
+    .map-iframe-info .small { color: var(--muted); font-size: 13px; }
+    .map-iframe-info ul { margin: 8px 0 0 18px; color: var(--muted); }
+    .map-iframe-info .open-native { display: inline-block; margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: var(--accent); color: #08101a; font-weight: 700; text-decoration: none; }
+    .city-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .city-card { width: 150px; border-radius: 10px; overflow: hidden; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.03); background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent); transition: transform 0.12s ease, box-shadow 0.12s ease; }
+    .city-card img { width: 100%; height: 96px; object-fit: cover; display: block; }
+    .city-card .city-label { padding: 8px; font-weight: 700; color: #e6eef8; text-align: center; background: linear-gradient(transparent, rgba(0, 0, 0, 0.06)); }
+    .city-card:hover { transform: translateY(-6px); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); }
+    form .row { display: flex; gap: 8px; margin-bottom: 8px; }
+    input[type='text'], select { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05); background: transparent; color: inherit; }
+    button { padding: 8px 12px; border-radius: 8px; border: none; background: var(--accent); color: #08101a; font-weight: 700; cursor: pointer; }
+    .list { max-height: 260px; overflow: auto; margin-top: 8px; }
+    .list .item { padding: 8px; border-radius: 8px; margin-bottom: 6px; background: rgba(255, 255, 255, 0.01); }
+    footer { margin-top: 14px; color: var(--muted); font-size: 13px; }
+    .small { font-size: 13px; color: var(--muted); }
+    /* Utility spacing helpers used instead of repeated inline styles */
+    .mt-8 { margin-top: 8px; }
+    .mt-12 { margin-top: 12px; }
+    .mt-16 { margin-top: 16px; }
+    .mt-20 { margin-top: 20px; }
+    .mt-10 { margin-top: 10px; }
+    .mt-6 { margin-top: 6px; }
+    /* Form helpers */
+    .input-full { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); color: inherit; font-size: 14px; }
+    .hidden { display: none; }
+    .scroll-y { max-height: 350px; overflow-y: auto; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .mb-12 { margin-bottom: 12px; }
+    .gap-8 { gap: 8px; }
+    /* Screen-reader only helper */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    /* Focus styles for keyboard navigation */
+    nav a:focus { outline: 2px solid #ffb703; outline-offset: 2px; }
+    /* Landing Page / Carousel Slider */
+    .carousel-container { width: 100%; height: 500px; position: relative; overflow: hidden; border-radius: 12px; margin-bottom: 20px; }
+    .carousel-slide { position: absolute; width: 100%; height: 100%; opacity: 0; transition: opacity 0.8s ease-in-out; display: flex; align-items: center; justify-content: center; }
+    .carousel-slide.active { opacity: 1; }
+    .carousel-slide img { width: 100%; height: 100%; object-fit: cover; }
+    /* Constrain carousel to reasonable max width and limit image height to avoid overscaling */
+    .carousel-container { max-width: 1100px; margin: 0 auto; }
+    .carousel-slide img { max-height: 520px; width: 100%; height: auto; }
+    /* Image shown inside a slide as a representative photo/icon */
+    .carousel-slide .carousel-image {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      width: 36%;
+      max-width: 420px;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.12);
+      object-fit: cover;
+    }
+    @media (max-width: 900px) {
+      .carousel-slide .carousel-image { display: none; }
+    }
+    body.modal-open { overflow: hidden; }
+    .carousel-content { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent); padding: 30px; color: white; }
+    .carousel-title { font-size: 32px; font-weight: 700; margin-bottom: 10px; }
+    .carousel-description { font-size: 16px; color: #e6eef8; line-height: 1.5; max-width: 600px; }
+    .carousel-category { display: inline-block; background: rgba(255, 183, 3, 0.2); border: 1px solid #ffb703; color: #ffb703; padding: 6px 12px; border-radius: 6px; font-size: 12px; margin-bottom: 12px; }
+    .carousel-controls { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 8px; z-index: 10; }
+    .carousel-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(255, 183, 3, 0.2); border: 1px solid #ffb703; color: #ffb703; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; font-size: 18px; }
+    .carousel-btn:hover { background: rgba(255, 183, 3, 0.4); transform: scale(1.1); }
+    .carousel-dots { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10; }
+    .carousel-dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(255, 255, 255, 0.3); cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; }
+    .carousel-dot.active { background: #ffb703; border-color: #fff; width: 32px; border-radius: 6px; }
+    @keyframes slideCarousel { from { opacity: 0; } to { opacity: 1; } }
+    .carousel-slide.active { animation: slideCarousel 0.8s ease-in-out; }
+    @media (max-width: 900px) {
+      .carousel-container { height: 300px; }
+      .carousel-title { font-size: 24px; }
+      .carousel-description { font-size: 14px; }
+    }
+    @media (max-width: 600px) {
+      .top-row { grid-template-columns: 1fr; }
+    }
+    /* Center quiz page content */
+    #page-quiz .panel { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 64vh; text-align: center; }
+    #quiz-area { max-width: 720px; width: 100%; margin: 0 auto; }
+    #quiz-answers { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+    .quiz-opt.btn { min-width: 220px; max-width: 95%; }
+    @media (max-width: 600px) {
+      #page-quiz .panel { padding-left: 12px; padding-right: 12px; min-height: auto; }
+      .quiz-opt.btn { min-width: 100%; }
+    }
+    .page { display: none; }
+    .page.active { display: block; }
+    .tourism-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+    .tourism-tag { display: inline-block; padding: 4px 10px; border-radius: 6px; background: rgba(255, 183, 3, 0.1); color: #ffb703; font-size: 12px; border: 1px solid rgba(255, 183, 3, 0.3); }
+    .tourism-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-top: 12px; }
+    .tourism-card { padding: 14px; border-radius: 10px; background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent); border: 1px solid rgba(255, 255, 255, 0.03); cursor: pointer; transition: all 0.2s ease; }
+    .tourism-card:hover { background: linear-gradient(180deg, rgba(255, 183, 3, 0.1), transparent); border-color: rgba(255, 183, 3, 0.5); transform: translateY(-4px); }
+    .tourism-card h4 { margin: 0 0 8px 0; color: #ffb703; }
+    .category-selector { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .category-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255, 183, 3, 0.3); background: transparent; color: #ffb703; cursor: pointer; transition: all 0.2s ease; font-weight: 600; }
+    .category-btn.active, .category-btn:hover { background: rgba(255, 183, 3, 0.2); border-color: #ffb703; }
+    .featured-section { margin-top: 20px; }
+    .featured-label { font-size: 12px; color: #ffb703; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .featured-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .featured-card { padding: 16px; border-radius: 10px; background: linear-gradient(135deg, rgba(255, 183, 3, 0.1), transparent); border: 1px solid rgba(255, 183, 3, 0.4); cursor: pointer; transition: all 0.3s ease; }
+    .featured-card:hover { transform: translateY(-6px); background: linear-gradient(135deg, rgba(255, 183, 3, 0.2), transparent); border-color: #ffb703; box-shadow: 0 8px 20px rgba(255, 183, 3, 0.2); }
+    .featured-card .city-name { font-weight: 700; color: #ffb703; font-size: 16px; margin-bottom: 6px; }
+    .featured-card .city-trivia { font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .featured-image { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
+    .recently-viewed-section { margin-top: 20px; }
+    .recently-label { font-size: 12px; color: #e6eef8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .recently-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; scroll-behavior: smooth; }
+    .recently-scroll::-webkit-scrollbar { height: 6px; }
+    .recently-scroll::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 3px; }
+    .recently-scroll::-webkit-scrollbar-thumb { background: rgba(255, 183, 3, 0.3); border-radius: 3px; }
+    .recently-item { flex-shrink: 0; width: 120px; border-radius: 8px; overflow: hidden; cursor: pointer; transition: all 0.2s ease; border: 1px solid rgba(255, 255, 255, 0.05); }
+    .recently-item-img { width: 100%; height: 80px; object-fit: cover; display: block; }
+    .recently-item-label { padding: 6px; font-size: 11px; background: rgba(0, 0, 0, 0.3); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .recently-item:hover { transform: translateY(-4px); border-color: rgba(255, 183, 3, 0.5); box-shadow: 0 6px 15px rgba(255, 183, 3, 0.1); }
+    .gallery-section { margin-top: 20px; }
+    .gallery-label { font-size: 12px; color: #e6eef8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .gallery-item { position: relative; border-radius: 8px; overflow: hidden; cursor: pointer; aspect-ratio: 1; }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+    .gallery-item:hover img { transform: scale(1.1); }
+    .gallery-item-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: flex-end; opacity: 0; transition: opacity 0.3s ease; padding: 8px; }
+    .gallery-item:hover .gallery-item-overlay { opacity: 1; }
+    .gallery-item-name { font-size: 12px; color: #fff; font-weight: 700; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideInLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 183, 3, 0.4); } 50% { box-shadow: 0 0 0 10px rgba(255, 183, 3, 0); } }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+    .panel { animation: fadeInUp 0.6s ease-out; }
+    .featured-section { animation: slideInLeft 0.8s ease-out; }
+    .recently-viewed-section { animation: slideInRight 0.8s ease-out; }
+    .gallery-section { animation: fadeInUp 1s ease-out; }
+    .featured-card { animation: scaleIn 0.5s ease-out backwards; }
+    .featured-card:nth-child(1) { animation-delay: 0.1s; }
+    .featured-card:nth-child(2) { animation-delay: 0.2s; }
+    .featured-card:nth-child(3) { animation-delay: 0.3s; }
+    .featured-card:nth-child(4) { animation-delay: 0.4s; }
+    .featured-card:hover { animation: pulse 2s infinite; }
+    .recently-item { animation: fadeIn 0.4s ease-out backwards; }
+    .gallery-item { animation: scaleIn 0.5s ease-out backwards; }
+    .gallery-item:nth-child(1) { animation-delay: 0s; }
+    .gallery-item:nth-child(2) { animation-delay: 0.05s; }
+    .gallery-item:nth-child(3) { animation-delay: 0.1s; }
+    .gallery-item:nth-child(4) { animation-delay: 0.15s; }
+    .gallery-item:nth-child(5) { animation-delay: 0.2s; }
+    .gallery-item:nth-child(6) { animation-delay: 0.25s; }
+    .gallery-item:nth-child(7) { animation-delay: 0.3s; }
+    .gallery-item:nth-child(8) { animation-delay: 0.35s; }
+    .gallery-item:hover { animation: bounce 0.6s ease-in-out; }
+    .featured-label::before { content: ''; display: inline-block; width: 16px; height: 16px; margin-right: 6px; animation: rotate 2s linear infinite; }
+    .gallery-label::before { content: ''; display: inline-block; width: 16px; height: 16px; margin-right: 6px; animation: rotate 2s linear infinite; }
+    /* Peta Budaya Animations */
+    .city-card { animation: fadeInUp 0.6s ease-out backwards; }
+    .city-card:nth-child(1) { animation-delay: 0s; }
+    .city-card:nth-child(2) { animation-delay: 0.1s; }
+    .city-card:nth-child(3) { animation-delay: 0.2s; }
+    .city-card:nth-child(4) { animation-delay: 0.3s; }
+    .city-card:nth-child(5) { animation-delay: 0.4s; }
+    .city-card:nth-child(6) { animation-delay: 0.5s; }
+    /* Rekomendasi Wisata Animations */
+    .tourism-card { animation: fadeInUp 0.5s ease-out backwards; }
+    .category-btn { animation: slideInLeft 0.4s ease-out backwards; }
+    .category-btn:nth-child(1) { animation-delay: 0s; }
+    .category-btn:nth-child(2) { animation-delay: 0.1s; }
+    .category-btn:nth-child(3) { animation-delay: 0.2s; }
+    .category-btn:nth-child(4) { animation-delay: 0.3s; }
+    .category-btn:nth-child(5) { animation-delay: 0.4s; }
+    .category-btn:nth-child(6) { animation-delay: 0.5s; }
+    .category-btn:nth-child(7) { animation-delay: 0.6s; }
+    .tourism-card:hover { transform: scale(1.05) translateY(-8px); box-shadow: 0 12px 25px rgba(255, 183, 3, 0.15); }
+    /* Form Animations */
+    form { animation: fadeInUp 0.6s ease-out; }
+    input[type='text'], select, button { transition: all 0.3s ease; }
+    input[type='text']:focus, select:focus { box-shadow: 0 0 12px rgba(255, 183, 3, 0.3); transform: scale(1.02); }
+    button:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(255, 183, 3, 0.3); }
+    button:active { transform: translateY(-1px); }
+    /* Quiz Animations */
+    #quiz-area { animation: fadeInUp 0.5s ease-out; }
+    .quiz-opt { animation: scaleIn 0.4s ease-out backwards; margin-bottom: 8px; transition: all 0.3s ease; }
+    .quiz-opt:nth-child(1) { animation-delay: 0s; }
+    .quiz-opt:nth-child(2) { animation-delay: 0.1s; }
+    .quiz-opt:nth-child(3) { animation-delay: 0.2s; }
+    .quiz-opt:hover { background: rgba(255, 183, 3, 0.2); transform: scale(1.05); }
+    .quiz-opt:active { transform: scale(0.98); }
+    /* Enhanced quiz UI */
+    .quiz-progress { width:100%; height:10px; background: rgba(255,255,255,0.04); border-radius:6px; overflow:hidden; margin-bottom:10px; }
+    .quiz-progress-bar { height:100%; background: linear-gradient(90deg,#ffb703,#ffd67a); width:0%; transition:width 300ms ease; }
+    .quiz-feedback { padding:8px 10px; border-radius:8px; margin-top:8px; font-weight:700; color:#fff; }
+    .quiz-feedback.correct { background: rgba(43, 211, 102, 0.12); color: #b9f6c6; }
+    .quiz-feedback.wrong { background: rgba(255, 69, 58, 0.08); color:#ffb3a3; }
+    .quiz-modal { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; background: rgba(2,6,23,0.6); z-index: 1400; }
+    .quiz-modal.hidden { display: none; }
+    .quiz-modal-panel { width: 92%; max-width: 520px; background: #071428; padding: 18px; border-radius:10px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03); color: #e6eef8; }
+    .badge { display:inline-block; padding:10px 14px; border-radius:999px; font-weight:800; color:#08101a; background: #ffb703; margin-top:10px; }
+    .badge.good { background: linear-gradient(90deg,#ffb703,#ffde8a); }
+    .badge.great { background: linear-gradient(90deg,#6be5a7,#2ad48f); color:#042; }
+    .badge.try { background: linear-gradient(90deg,#f3f4f6,#cbd5e1); color:#042; }
+    /* Dialog/Overlay Animations */
+    .map-iframe-overlay { animation: fadeIn 0.3s ease-out; }
+    .map-iframe-panel { animation: scaleIn 0.4s ease-out; }
+    /* List Items Animations */
+    .list .item { animation: fadeInUp 0.4s ease-out backwards; }
+    .list .item:nth-child(1) { animation-delay: 0s; }
+    .list .item:nth-child(2) { animation-delay: 0.05s; }
+    .list .item:nth-child(3) { animation-delay: 0.1s; }
+    .list .item:nth-child(4) { animation-delay: 0.15s; }
+    .list .item:nth-child(5) { animation-delay: 0.2s; }
+    .list .item:hover { transform: translateX(8px); background: rgba(255, 183, 3, 0.1); }
+    /* Navigation Animations */
+    nav a { transition: all 0.3s ease; }
+    nav a:hover { transform: translateX(8px); }
+    nav a.active { animation: pulse 2s infinite; }
+    /* Result Display Animations */
+    #dialect-result, #food-result, #quiz-result { animation: slideInLeft 0.4s ease-out; }
+    .item { transition: all 0.3s ease; }
+    .item:hover { background: rgba(255, 183, 3, 0.08); }
+    @media (max-width: 900px) {
+      aside { display: none; }
+      .top-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    /* Side panel removed */
+  </style>
+</head>
+<body>
+  <!-- Tidy notes: cleaned whitespace, added small utility classes, added some ARIA details
+       and set explicit button types for slider controls. Keep JS in `script.js` to handle
+       page interactions. -->
+  <a class="skip-link" href="#main-content" style="position:absolute;left:-9999px;">Skip to content</a>
+  <div class="app">
+    <aside>
+      <header>
+        <div class="logo" aria-label="Jatim Njelajah logo">
+          <img src="foto/LOGO Transparan.jpg" class="logo-img" alt="Jatim Njelajah logo">
+        </div>
+        <div class="header-info">
+          <h1>Jatim Njelajah</h1>
+          <div class="small">Dashboard Budaya & Lokal Jawa Timur</div>
+        </div>
+      </header>
+      <nav role="navigation" aria-label="Main Navigation">
+        <!-- Dashboard link removed -->
+        <a id="nav-map" href="peta-budaya.html" aria-label="Peta Budaya"><i class='bx bx-map'></i> Peta Budaya</a>
+        <a id="nav-dialect" href="dialect.html" aria-label="Dialek Analyzer"><i class='bx bx-message'></i> Dialek Analyzer</a>
+        <a id="nav-food" href="kuliner.html" aria-label="Kuliner Finder"><i class='bx bx-food-menu'></i> Kuliner Finder</a>
+        <a id="nav-tourism" href="#" aria-label="Rekomendasi Wisata"><i class='bx bx-landscape'></i> Rekomendasi Wisata</a>
+        
+        <a id="nav-quiz" href="#" aria-label="Quiz Budaya"><i class='bx bx-question-mark'></i> Kuis Budaya</a>
+        
+        <a id="nav-calendar" href="kalender.html" aria-label="Kalender Tradisi"><i class='bx bx-calendar'></i> Kalender Tradisi</a>
+        
+      </nav>
+      <footer>
+        <div class="small">Author: barudak PHI</div>
+      </footer>
+    </aside>
+
+    <main>
+      <!-- Dashboard section removed to prevent dashboard navigation -->
+
+      <!-- Peta Budaya Page -->
+      <div id="page-map" class="page hidden">
+        <div class="panel">
+          <div class="flex-between mb-12">
+            <strong><i class='bx bx-map' aria-hidden="true" style="margin-right:8px"></i> Peta Budaya Jawa Timur</strong>
+            <div class="small">Klik gambar kota/kabupaten untuk melihat peta dan info daerah</div>
+          </div>
+          <div class="mb-12">
+            <input type="text" id="search-region" class="input-full" placeholder="Cari kabupaten atau kota...">
+          </div>
+          <div class="mt-16">
+            <div class="small mb-12"><strong>Daftar Kabupaten/Kota:</strong></div>
+            <div class="city-grid scroll-y" id="city-grid"></div>
+          </div>
+          
+          <!-- Info daerah hanya muncul di popup overlay -->
+        </div>
+      </div>
+
+      <!-- Rekomendasi Wisata Page removed -->
+      <div id="page-tourism" class="page hidden">
+          <div class="panel">
+            <strong><i class='bx bx-landscape' aria-hidden="true" style="margin-right:8px"></i> Rekomendasi Wisata Jawa Timur</strong>
+          <div class="small mt-12">Berikut rekomendasi tempat wisata unggulan untuk setiap daerah. Gunakan kotak pencarian untuk menemukan rekomendasi per daerah.</div>
+          <div class="mt-12">
+            <div class="row"><input id="tourism-query" type="text" class="input-full" placeholder="Cari kabupaten/kota (contoh: Malang)" aria-label="Cari wisata"><button id="tourism-clear" type="button">Bersihkan</button></div>
+            <div id="tourism-list" class="tourism-grid mt-10"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dialek Analyzer Page -->
+      <div id="page-dialect" class="page hidden">
+        <div class="panel">
+            <strong><i class='bx bx-message' aria-hidden="true" style="margin-right:8px"></i> Dialek Analyzer</strong>
+          <form id="dialect-form" class="mt-12">
+            <div class="row"><input id="txt-sentence" type="text" placeholder="Ketik kalimat (contoh: Kowe piye lek?)" required><button type="submit">Analisa</button></div>
+          </form>
+          <div id="dialect-result" class="mt-10"></div>
+        </div>
+      </div>
+
+      <!-- Kuliner Finder Page -->
+      <div id="page-food" class="page hidden">
+        <div class="panel">
+            <strong><i class='bx bx-food-menu' aria-hidden="true" style="margin-right:8px"></i> Kuliner Finder</strong>
+          <form id="food-form" class="mt-12">
+            <div class="row"><input id="food-query" type="text" class="input-full" placeholder="Cari nama makanan atau daerah (contoh: Soto Lamongan, Malang)" aria-label="Cari kuliner"><button type="submit">Cari</button></div>
+          </form>
+          <div id="food-result" class="mt-10"></div>
+          <div id="food-recommend-wrap" class="mt-16">
+            <div class="small" style="margin-bottom:8px;color:var(--accent)"><strong>Rekomendasi Kuliner Unggulan Jawa Timur</strong></div>
+            <div id="food-recommend"></div>
+          </div>
+        </div>
+      </div>
+
+        <!-- Quiz Page: Kuis Budaya (Sederhana) -->
+        <div id="page-quiz" class="page hidden">
+          <div class="panel">
+            <div id="quiz-area">
+                <h2><i class='bx bx-question-mark' aria-hidden="true" style="margin-right:8px"></i> Kuis Budaya Jawa Timur</h2>
+              <p class="small">Tes pengetahuan singkat tentang Jawa Timur. Tekan tombol di bawah untuk mulai.</p>
+              <div style="margin-top:22px; display:flex; justify-content:center;">
+                <button id="btn-start-quiz" class="btn" style="font-size:20px;padding:18px 28px;border-radius:14px;min-width:260px;">Mulai Kuis</button>
+              </div>
+              <div id="quiz-container" class="mt-12 hidden">
+                <div class="quiz-progress"><div id="quiz-progress-bar" class="quiz-progress-bar" style="width:0%"></div></div>
+                <div id="quiz-question-text" style="font-size:18px;margin-bottom:12px"></div>
+                <div id="quiz-answers"></div>
+                <div style="margin-top:14px;display:flex;gap:10px;justify-content:center">
+                  <button id="btn-next-question" class="btn" disabled>Lanjut</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      <!-- Kalender Tradisi Page -->
+      <div id="page-calendar" class="page hidden">
+        <div class="panel">
+            <strong><i class='bx bx-calendar' aria-hidden="true" style="margin-right:8px"></i> Kalender Tradisi Jawa Timur</strong>
+          <div class="mt-12 small" style="color:var(--muted)">Klik region untuk melihat detail atau lihat daftar tradisi per daerah di bawah.</div>
+          <div id="calendar-list" class="mt-12" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px"></div>
+        </div>
+      </div>
+    </main>
+    <!-- Side panel removed -->
+  </div>
+
+  <script src="script.js" onerror="console.error('script.js failed to load'); alert('Error: script.js tidak ter-load')" defer></script>
+  <!-- Google Maps API: replace YOUR_API_KEY with a valid key; we load geometry library for polygon checks -->
+  <!-- Google Maps removed per user request -->
+</body>
+</html>
